@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book My Show</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      overflow-x: hidden;
+    }
+    header, .section {
+      position: relative;
+      z-index: 1;
+    }
+    header {
+      background-color: #e50914;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .section {
+      padding: 1rem;
+      display: none;
+    }
+    .section.active {
+      display: block;
+    }
+    h2 {
+      color: #e50914;
+    }
+    .card {
+      background: white;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: relative;
+      z-index: 1;
+    }
+    .option {
+      background: #fff;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      margin: 10px;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .option:hover, .option.selected {
+      border-color: #e50914;
+      background: #ffeaea;
+    }
+    .option img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    button, input[type="number"], input[type="datetime-local"], input[type="email"], input[type="password"] {
+      padding: 0.5rem;
+      margin-top: 1rem;
+      background: #e50914;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    #confirmation img {
+      margin-top: 20px;
+      width: 200px;
+      border-radius: 10px;
+      animation: stickerAnimation 2s ease-out;
+    }
+    @keyframes stickerAnimation {
+      0% { transform: scale(0.5); opacity: 0; }
+      50% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    #movies, #languages, #theaters, #snacks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    #movies .option, #languages .option, #theaters .option, #snacks .option {
+      flex: 1 1 120px;
+      max-width: 150px;
+    }
+    .seat-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 5px;
+      justify-items: center;
+      margin-top: 20px;
+    }
+    .seat {
+      width: 30px;
+      height: 30px;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #fff;
+      transition: 0.3s;
+    }
+    .seat.selected {
+      background-color: #e50914;
+      border-color: #e50914;
+    }
+    .seat.unavailable {
+      background-color: #ddd;
+      cursor: not-allowed;
+    }
+    .seat.selected:hover {
+      background-color: #ff8e8e;
+    }
+    .error {
+      color: red;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Book My Show</h1>
+  </header>
+
+  <!-- Sections -->
+  <div class="section active" id="step0">
+    <h2>Login</h2>
+    <div class="card">
+      <input type="email" id="email" placeholder="Email" style="width: 100%; margin-bottom: 10px;" />
+      <input type="password" id="password" placeholder="Password" style="width: 100%;" />
+      <button onclick="login()">Login</button>
+      <p id="loginError" class="error" style="display: none;">Please enter valid email and password.</p>
+    </div>
+  </div>
+
+  <div class="section" id="step1">
+    <h2>Select Movie</h2>
+    <input type="text" id="movieSearch" placeholder="Search Movies..." onkeyup="filterMovies()" />
+    <div id="movies" class="card"></div>
+    <button onclick="nextStep(1)">Enter</button>
+    <p id="movieError" class="error" style="display: none;">Please select a movie.</p>
+  </div>
+
+  <div class="section" id="step2">
+    <h2>Select Language</h2>
+    <div id="languages" class="card"></div>
+    <button onclick="nextStep(2)">Enter</button>
+    <p id="languageError" class="error" style="display: none;">Please select a language.</p>
+  </div>
+
+  <div class="section" id="step3">
+    <h2>Select Theater</h2>
+    <div id="theaters" class="card"></div>
+    <button onclick="nextStep(3)">Enter</button>
+    <p id="theaterError" class="error" style="display: none;">Please select a theater.</p>
+  </div>
+
+  <div class="section" id="step4">
+    <h2>Would You Like Snacks?</h2>
+    <div id="snacks" class="card"></div>
+    <button onclick="nextStep(4)">Enter</button>
+  </div>
+
+  <div class="section" id="step5">
+    <h2>How Many Tickets?</h2>
+    <input type="number" id="ticketQuantity" value="1" min="1" />
+    <label for="showTime">Select Show Time:</label>
+    <input type="datetime-local" id="showTime" />
+    <button onclick="nextStep(5)">Enter</button>
+  </div>
+
+  <div class="section" id="step6">
+    <h2>Select Seats</h2>
+    <div class="seat-grid" id="seatSelection"></div>
+    <p id="seatError" class="error" style="display: none;">Please select at least one seat.</p>
+    <button onclick="nextStep(6)">Enter</button>
+  </div>
+
+  <div class="section" id="step7">
+    <div id="confirmation" class="card" style="text-align:center;"></div>
+    <button onclick="alert('Thank you for booking!')">Finish</button>
+  </div>
+
+  <script>
+    const movies = [
+      { name: 'OG', img: 'https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcRRvdMwpkBEShynkxKg70HaGjwPr4anqiQC4-BFYLYRKGv0WAjf' },
+      { name: 'Saaho', img: 'https://upload.wikimedia.org/wikipedia/en/6/6b/Saaho_poster.jpg' },
+      { name: 'KGF part 3', img: 'https://media.assettype.com/cinemaexpress/import/uploads/user/ckeditor_images/article/2022/4/13/Yash_1.jpeg?w=1536' },
+      { name: 'Animal Park', img: 'https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcT9zRNezyoKFad1erjGfV9ejYPQZiqpAX3e6DJyCoRc0cxoYP_8' },
+      { name: 'Pushpa 2', img: 'http://image.tmdb.org/t/p/original/gpNcQfQ4YGtFwEcrjcK9HxVM2KF.jpg' },
+      { name: 'Jawan', img: 'https://tse4.mm.bing.net/th?id=OIP.P-aY0eVPiJK7OzIaCbYruwHaJd&pid=Api&P=0&h=180' },
+      { name: 'Leo', img: 'https://wallpapercave.com/wp/wp12185319.jpg' },
+      { name: 'Salaar', img: 'https://hdmovie2.mn/uploads/posts/2023-12/770906_poster_1703345875.jpg' },
+      { name: 'Dunki', img: 'https://i.ytimg.com/vi/Lgopazwcjfw/maxres2.jpg' },
+      { name: 'Tiger 3', img: 'https://resizing.flixster.com/EhnZhhnlXPpQk_tXymRE5RpssVs=/ems.cHJkLWVtcy1hc3NldHMvbW92aWVzL2VjMDc3ODZmLTUyOTEtNGE1NC04NzM5LTQyZGJkMjQxMWM1ZC5qcGc=' },
+      { name: 'Adipurush', img: 'https://tse2.mm.bing.net/th?id=OIP.DKUy8Pvg1p5lsm36t1UadQHaKD&pid=Api&P=0&h=180' },
+      { name: 'Pathaan', img: 'https://filmfare.wwmindia.com/content/2022/dec/pathaan11669878737.jpg' },
+      { name: 'Brahmastra', img: 'https://m.media-amazon.com/images/M/MV5BZjY2MmI1ZWItNmU0Yy00NTdkLWJiYmQtNzFlZWNlMzkxZTZjXkEyXkFqcGdeQXVyNjkwOTg4MTA@._V1_.jpg' },
+      { name: 'RRR', img: 'https://i.etsystatic.com/20387760/r/il/f3a7ff/4445210431/il_fullxfull.4445210431_1rod.jpg' },
+      { name: 'Vikram', img: 'https://tse1.mm.bing.net/th?id=OIP.Tr8WDW8oz2XOeMNrSaBgAwHaLH&pid=Api&P=0&h=180' },
+      { name: 'devara', img: 'https://akm-img-a-in.tosshub.com/indiatoday/styles/medium_crop_simple/public/2024-01/jr_ntr_devara_glimpse.jpg?VersionId=FO..TRJHzYBdPzgb7_gXZNbgHVzmQqHS&size=750:*' },
+      { name: 'Master', img: 'https://wallpapercave.com/wp/wp5429971.jpg' },
+      { name: 'Sita Ramam', img: 'https://i.ytimg.com/vi/qDAGLbZb0nU/maxresdefault.jpg?sqp=-oaymwEoCIAKENAF8quKqQMcGADwAQH4AbYIgAKAD4oCDAgAEAEYciBlKDAwDw==&rs=AOn4CLAF_XtrIR-jXxOAmTGTpBP2w_EuwQ' },
+      { name: 'Kantara', img: 'https://tse1.mm.bing.net/th?id=OIP.0ns5vcKxe9Y4PcMPnCB31wHaKs&pid=Api&P=0&h=180' },
+      { name: 'Hi Nanna', img: 'https://image.tmdb.org/t/p/original/1nH0SY8Ir9vD0XaLTgi5vs9MwBS.jpg' },
+      { name: 'Guntur Kaaram', img: 'https://www.cinejosh.com/newsimg/newsmainimg/mahesh-babu-guntur-karam-glimps-out_b_3105230709.jpg' },
+      { name: 'Thunivu', img: 'https://onlookersmedia.in/wp-content/uploads/2022/09/thunivu-second-look-2.jpg' },
+      { name: 'Varisu', img: 'https://cdn.zeebiz.com/sites/default/files/2023/01/16/221614-varisu-vijay.jpg' },
+      { name: 'Bro', img: 'https://tse3.mm.bing.net/th?id=OIP.O9BPttGl41z-nd-WJi4-VgHaJQ&pid=Api&P=0&h=180' }
+    ];
+    const languages = [
+      { name: 'English', img: 'https://www.yeapenglish.com/images/blog/4629725007-Ads%C4%B1z.png' },
+      { name: 'Hindi', img: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Hindi.svg' },
+      { name: 'Telugu', img: 'https://www.getanylanguage.com/wp-content/uploads/2022/06/telugu-language-translation.png' },
+      { name: 'Tamil', img: 'https://upload.wikimedia.org/wikipedia/commons/3/35/Word_Tamil.svg' }
+    ];
+    const snacks = [
+      { name: 'None', img: 'https://cdn-icons-png.flaticon.com/512/992/992651.png', price: 0 },
+      { name: 'Popcorn', img: 'https://tse4.mm.bing.net/th?id=OIP.IiqCZJqyE6Z7dhR4tLsDEAHaHa&pid=Api&P=0&h=180', price: 100 },
+      { name: 'Nachos', img: 'https://thumbs.dreamstime.com/b/nachos-chips-bowl-sauces-dip-variety-nachos-chips-bowl-sauces-dip-variety-grey-stone-background-110113149.jpg', price: 120 },
+      { name: 'Cold Drink', img: 'https://images.herzindagi.info/image/2022/May/cold-drink-hacks-to-know.jpg', price: 80 },
+      { name: 'Combo', img: 'https://hips.hearstapps.com/wdy.h-cdn.co/assets/cm/15/09/54eaf3d6ebeb3_-_movie-theater-snacks-from-around-the-world-mdn.jpg', price: 180 }
+    ];
+    const theaters = ['PVR Cinemas', 'INOX', 'Cinepolis', 'Carnival Cinemas', 'Miraj Cinemas', 'Asian Cinemas', 'GVK One Mall'];
+    const ticketPrice = 200;
+
+    let selectedMovie = null, selectedLanguage = null, selectedTheater = null, selectedSnack = snacks[0];
+    let selectedSeats = [];
+
+    function login() { 
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      if (!email || !password) {
+        document.getElementById('loginError').style.display = 'block';
+        return;
+      }
+      document.getElementById('loginError').style.display = 'none';
+      showStep(1);
+    }
+
+    function showStep(step) {
+      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+      document.getElementById(`step${step}`).classList.add('active');
+    }
+
+    function createOptions(list, containerId, groupName) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = list.map((item, index) => `
+        <div class="option" onclick="selectOption('${groupName}', ${index})">
+          <img src="${item.img}" alt="${item.name}" />
+          <div>${item.name}</div>
+        </div>`).join('');
+    }
+
+    function filterMovies() {
+      const query = document.getElementById('movieSearch').value.toLowerCase();
+      const filtered = movies.filter(m => m.name.toLowerCase().includes(query));
+      createOptions(filtered, 'movies', 'movie');
+    }
+
+    function selectOption(group, index) {
+      document.querySelectorAll(`#${group}s .option`).forEach(o => o.classList.remove('selected'));
+      document.querySelectorAll(`#${group}s .option`)[index].classList.add('selected');
+      if (group === 'movie') selectedMovie = movies[index];
+      if (group === 'language') selectedLanguage = languages[index];
+      if (group === 'snack') selectedSnack = snacks[index];
+    }
+
+    function selectTheater(name, index) {
+      document.querySelectorAll('#theaters .option').forEach(o => o.classList.remove('selected'));
+      document.querySelectorAll('#theaters .option')[index].classList.add('selected');
+      selectedTheater = name;
+    }
+
+    function generateSeatGrid() {
+      const seatContainer = document.getElementById('seatSelection');
+      seatContainer.innerHTML = '';
+      for (let i = 0; i < 64; i++) {
+        const seat = document.createElement('div');
+        seat.className = 'seat';
+        seat.onclick = () => toggleSeat(i);
+        seatContainer.appendChild(seat);
+      }
+    }
+
+    function toggleSeat(index) {
+      const seat = document.getElementsByClassName('seat')[index];
+      if (seat.classList.contains('unavailable')) return;
+      seat.classList.toggle('selected');
+      if (seat.classList.contains('selected')) selectedSeats.push(index);
+      else selectedSeats = selectedSeats.filter(i => i !== index);
+    }
+
+    function nextStep(current) {
+      if (current === 1 && !selectedMovie) return document.getElementById('movieError').style.display = 'block';
+      if (current === 2 && !selectedLanguage) return document.getElementById('languageError').style.display = 'block';
+      if (current === 3 && !selectedTheater) return document.getElementById('theaterError').style.display = 'block';
+      if (current === 6 && selectedSeats.length === 0) return document.getElementById('seatError').style.display = 'block';
+
+      if (current === 6) {
+        const qty = document.getElementById('ticketQuantity').value;
+        const total = qty * ticketPrice + selectedSnack.price;
+        document.getElementById('confirmation').innerHTML = `
+          <h2>Booking Confirmed!</h2>
+          <p><strong>Movie:</strong> ${selectedMovie.name}</p>
+          <p><strong>Language:</strong> ${selectedLanguage.name}</p>
+          <p><strong>Theater:</strong> ${selectedTheater}</p>
+          <p><strong>Snack:</strong> ${selectedSnack.name}</p>
+          <p><strong>Tickets:</strong> ${qty}</p>
+          <p><strong>Seats Selected:</strong> ${selectedSeats.length}</p>
+          <p><strong>Total Cost:</strong> ₹${total}</p>`;
+      }
+
+      showStep(current + 1);
+    }
+
+    window.onload = function() {
+      createOptions(movies, 'movies', 'movie');
+      createOptions(languages, 'languages', 'language');
+      createOptions(snacks, 'snacks', 'snack');
+      generateSeatGrid();
+      document.getElementById('theaters').innerHTML = theaters.map((theater, index) => `
+        <div class="option" onclick="selectTheater('${theater}', ${index})">${theater}</div>`).join('');
+    }
+  </script>
+
+</body>
+</html>
